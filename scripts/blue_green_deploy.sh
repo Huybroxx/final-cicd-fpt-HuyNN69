@@ -64,7 +64,7 @@ server {
 EOF
 
     docker compose -f "$COMPOSE_FILE" up -d nginx
-    docker exec bg_nginx_proxy nginx -s reload
+    sleep 2`ndocker exec bg_nginx_proxy nginx -s reload || docker compose -f "$COMPOSE_FILE" restart nginx
     sleep 3
     docker stop "bg_app_$CURRENT_COLOR" || true
 
