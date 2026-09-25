@@ -46,7 +46,7 @@ upstream app_backend {
 
 server {
     listen 80;
-    server_name localhost;
+    server_name fuji.io.vn www.fuji.io.vn localhost;
 
     location / {
         proxy_pass http://app_backend;

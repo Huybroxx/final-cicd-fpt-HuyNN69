@@ -62,14 +62,22 @@ jobs:
             cp -r backend/backend/* backend/
           fi
           test -f backend/coverage.xml && echo "Verified backend/coverage.xml exists."
-      - uses: sonarsource/sonarqube-scan-action@master
+      - name: SonarQube Code Quality & Security Scan
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-      - uses: sonarsource/sonarqube-quality-gate-action@master
-        timeout-minutes: 5
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          if [ -n "$SONAR_TOKEN" ] && [ -n "$SONAR_HOST_URL" ]; then
+            echo "Executing SonarQube Scanner CLI against $SONAR_HOST_URL..."
+            docker run --rm \
+              -e SONAR_HOST_URL="$SONAR_HOST_URL" \
+              -e SONAR_TOKEN="$SONAR_TOKEN" \
+              -v "${PWD}:/usr/src" \
+              sonarsource/sonar-scanner-cli:latest \
+              sonar-scanner -Dsonar.qualitygate.wait=true
+          else
+            echo "::warning ::SONAR_TOKEN and SONAR_HOST_URL are not configured in GitHub Secrets. Skipping SonarQube Quality Gate scan."
+          fi
 
   build:
     runs-on: ubuntu-latest
@@ -85,6 +93,26 @@ jobs:
     if: github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
-      - run: |
-          chmod +x ./scripts/blue_green_deploy.sh ./scripts/rollback.sh
-          ./scripts/blue_green_deploy.sh
+      - name: Deploy to Production VPS via SSH (Zero-Downtime Blue-Green)
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SERVER_HOST: ${{ secrets.SERVER_HOST || '161.118.195.1' }}
+          SERVER_USER: ${{ secrets.SERVER_USER || 'ubuntu' }}
+        run: |
+          if [ -z "$SSH_PRIVATE_KEY" ]; then
+            echo "::error ::SSH_PRIVATE_KEY secret is not configured in GitHub Secrets!"
+            exit 1
+          fi
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H "$SERVER_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no "$SERVER_USER@$SERVER_HOST" "
+            set -e
+            echo '=== Deploying to Production VPS for domain fuji.io.vn ==='
+            cd /opt/finaldevops
+            git fetch origin main
+            git reset --hard origin/main
+            chmod +x ./scripts/blue_green_deploy.sh ./scripts/rollback.sh
+            ./scripts/blue_green_deploy.sh
+          "
