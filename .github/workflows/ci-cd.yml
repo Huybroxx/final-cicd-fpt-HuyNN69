@@ -62,7 +62,7 @@ jobs:
             cp -r backend/backend/* backend/
           fi
           test -f backend/coverage.xml && echo "Verified backend/coverage.xml exists."
-      - name: SonarQube Code Quality & Security Scan
+      - name: SonarQube scan
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
@@ -93,7 +93,7 @@ jobs:
     if: github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
-      - name: Deploy to Production VPS via SSH (Zero-Downtime Blue-Green)
+      - name: Deploy to production VPS
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           SERVER_HOST: ${{ secrets.SERVER_HOST || '161.118.195.1' }}
@@ -109,7 +109,7 @@ jobs:
           ssh-keyscan -H "$SERVER_HOST" >> ~/.ssh/known_hosts 2>/dev/null
           ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no "$SERVER_USER@$SERVER_HOST" "
             set -e
-            echo '=== Deploying to Production VPS for domain fuji.io.vn ==='
+            echo 'Deploying to production server...'
             cd /opt/finaldevops
             git fetch origin main
             git reset --hard origin/main

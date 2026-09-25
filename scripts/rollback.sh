@@ -10,7 +10,7 @@ else
     ROLLBACK_TO="green"
 fi
 
-echo "Rolling back active traffic to: $ROLLBACK_TO"
+echo "Rolling back traffic to: $ROLLBACK_TO"
 
 docker compose -f "$COMPOSE_FILE" start "app-$ROLLBACK_TO" || \
 docker compose -f "$COMPOSE_FILE" up -d "app-$ROLLBACK_TO"
@@ -22,7 +22,7 @@ upstream app_backend {
 
 server {
     listen 80;
-    server_name localhost;
+    server_name fuji.io.vn www.fuji.io.vn localhost;
 
     location / {
         proxy_pass http://app_backend;
@@ -36,4 +36,4 @@ server {
 EOF
 
 docker exec bg_nginx_proxy nginx -s reload
-echo "Rollback complete: Live traffic restored to [$ROLLBACK_TO]"
+echo "Rollback completed. Live traffic routed to [$ROLLBACK_TO]"
