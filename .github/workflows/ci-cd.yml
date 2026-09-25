@@ -18,6 +18,7 @@ jobs:
         with:
           python-version: "3.11"
           cache: "pip"
+          cache-dependency-path: backend/requirements-dev.txt
       - run: pip install flake8 black
       - run: |
           flake8 backend/app/ backend/tests/ --max-line-length=100
@@ -32,6 +33,7 @@ jobs:
         with:
           python-version: "3.11"
           cache: "pip"
+          cache-dependency-path: backend/requirements-dev.txt
       - run: |
           cd backend
           pip install -r requirements-dev.txt
@@ -54,6 +56,12 @@ jobs:
         with:
           name: test-artifacts
           path: backend
+      - name: Verify and normalize test artifacts path
+        run: |
+          if [ -d backend/backend ]; then
+            cp -r backend/backend/* backend/
+          fi
+          test -f backend/coverage.xml && echo "Verified backend/coverage.xml exists."
       - uses: sonarsource/sonarqube-scan-action@master
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
