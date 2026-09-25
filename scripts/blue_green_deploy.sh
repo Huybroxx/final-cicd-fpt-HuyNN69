@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# ==============================================================================
+# Automated Zero-Downtime Blue-Green Deployment Script
+# ==============================================================================
 set -euo pipefail
 
 COMPOSE_FILE="docker-compose.blue-green.yml"
@@ -6,8 +9,11 @@ NGINX_CONF="nginx/default.conf"
 MAX_RETRIES=10
 RETRY_INTERVAL=3
 
+echo "=========================================================="
 echo "Starting Blue-Green Zero-Downtime Deployment"
+echo "=========================================================="
 
+# 1. Determine active environment
 if grep -q "app-green:8000" "$NGINX_CONF" 2>/dev/null; then
     CURRENT_COLOR="green"
     TARGET_COLOR="blue"
@@ -20,25 +26,30 @@ else
     CURRENT_PORT=8001
 fi
 
-echo "Active environment: $CURRENT_COLOR"
-echo "Deploying target: $TARGET_COLOR on port $TARGET_PORT"
+echo "[INFO] Currently active environment: $CURRENT_COLOR"
+echo "[INFO] Deploying new release to target: $TARGET_COLOR (Internal Port: $TARGET_PORT)"
 
+# 2. Build and start target container
+echo "[STEP 1] Starting target container app-$TARGET_COLOR..."
 docker compose -f "$COMPOSE_FILE" up -d --no-deps --build "app-$TARGET_COLOR"
 
+# 3. Health Check Verification Loop
+echo "[STEP 2] Performing health check on target (http://localhost:$TARGET_PORT/health)..."
 HEALTHY=false
 for i in $(seq 1 $MAX_RETRIES); do
-    echo "Health check attempt $i/$MAX_RETRIES..."
+    echo "  -> Check attempt $i/$MAX_RETRIES..."
     RESPONSE=$(curl -s -m 2 "http://localhost:$TARGET_PORT/health" || echo "")
     if echo "$RESPONSE" | grep -q '"status":"ok"'; then
         HEALTHY=true
-        echo "Target app-$TARGET_COLOR passed health check."
+        echo "  [SUCCESS] Target app-$TARGET_COLOR passed health check!"
         break
     fi
     sleep $RETRY_INTERVAL
 done
 
+# 4. Traffic Switch or Rollback
 if [ "$HEALTHY" = true ]; then
-    echo "Updating Nginx configuration to point to app-$TARGET_COLOR..."
+    echo "[STEP 3] Updating Nginx configuration to point to app-$TARGET_COLOR..."
     cat <<EOF > "$NGINX_CONF"
 upstream app_backend {
     server app-$TARGET_COLOR:8000;
@@ -63,17 +74,32 @@ server {
 }
 EOF
 
+    # Ensure Nginx proxy is running
     docker compose -f "$COMPOSE_FILE" up -d nginx
-    sleep 2`ndocker exec bg_nginx_proxy nginx -s reload || docker compose -f "$COMPOSE_FILE" restart nginx
+
+    # Hot reload Nginx worker processes without dropping connections (Zero-Downtime)
+    echo "[STEP 4] Hot-reloading Nginx proxy (zero-downtime traffic switch)..."
+    sleep 2
+    docker exec bg_nginx_proxy nginx -s reload || docker compose -f "$COMPOSE_FILE" restart nginx
+
+    # Grace period for existing connections to complete
     sleep 3
+
+    # Stop old container
+    echo "[STEP 5] Stopping previous environment app-$CURRENT_COLOR..."
     docker stop "bg_app_$CURRENT_COLOR" || true
 
-    echo "Deployment successful: Active environment is now [$TARGET_COLOR]"
+    echo "=========================================================="
+    echo "DEPLOYMENT COMPLETE: Active environment is now [$TARGET_COLOR]"
+    echo "Verified at: $(date -u)"
+    echo "=========================================================="
     exit 0
 else
-    echo "Health check failed for target app-$TARGET_COLOR"
-    echo "Rolling back: Stopping target container..."
+    echo "=========================================================="
+    echo "[ERROR] Health check FAILED for target app-$TARGET_COLOR!"
+    echo "[ROLLBACK] Aborting release. Halting unhealthy target container..."
     docker stop "bg_app_$TARGET_COLOR" || true
-    echo "Rollback complete: Active traffic remains on [$CURRENT_COLOR]"
+    echo "[ROLLBACK] Traffic was NEVER switched. Active environment remains [$CURRENT_COLOR]."
+    echo "=========================================================="
     exit 1
 fi
