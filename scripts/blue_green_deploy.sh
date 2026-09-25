@@ -51,16 +51,15 @@ done
 if [ "$HEALTHY" = true ]; then
     echo "[STEP 3] Updating Nginx configuration to point to app-$TARGET_COLOR..."
     cat <<EOF > "$NGINX_CONF"
-upstream app_backend {
-    server app-$TARGET_COLOR:8000;
-}
+resolver 127.0.0.11 valid=2s ipv6=off;
 
 server {
     listen 80;
     server_name fuji.io.vn www.fuji.io.vn localhost;
 
     location / {
-        proxy_pass http://app_backend;
+        set \$upstream_endpoint app-$TARGET_COLOR:8000;
+        proxy_pass http://\$upstream_endpoint;
         proxy_http_version 1.1;
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
