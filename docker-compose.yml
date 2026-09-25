@@ -1,7 +1,7 @@
 services:
   app:
     build:
-      context: .
+      context: ./backend
       dockerfile: Dockerfile
     image: fastapi-devops-app:latest
     container_name: fastapi_app

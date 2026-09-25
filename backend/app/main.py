@@ -7,13 +7,11 @@ from app.models.item import HealthResponse
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version=settings.VERSION,
-    description="Enterprise-grade FastAPI service containerized with Docker, analyzed by SonarQube, and deployed via Blue-Green zero-downtime pipeline.",
     docs_url="/docs",
     redoc_url="/redoc",
     openapi_url="/openapi.json",
 )
 
-# CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -28,7 +26,6 @@ app.add_middleware(
     response_model=HealthResponse,
     status_code=status.HTTP_200_OK,
     tags=["Health"],
-    summary="Root Healthcheck",
 )
 def root_health() -> HealthResponse:
     return HealthResponse(
@@ -51,7 +48,6 @@ def root():
     }
 
 
-# Include API v1 routes
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
 

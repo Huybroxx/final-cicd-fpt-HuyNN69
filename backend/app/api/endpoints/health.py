@@ -9,8 +9,6 @@ router = APIRouter(tags=["Health"])
     "/health",
     response_model=HealthResponse,
     status_code=status.HTTP_200_OK,
-    summary="Health Check Probe",
-    description="Endpoint for Docker, Load Balancers, and Blue-Green zero-downtime deployment verification",
 )
 def get_health() -> HealthResponse:
     return HealthResponse(

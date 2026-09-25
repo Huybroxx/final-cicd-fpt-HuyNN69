@@ -14,7 +14,7 @@ services:
 
   app-blue:
     build:
-      context: .
+      context: ./backend
       dockerfile: Dockerfile
     image: fastapi-devops-app:latest
     container_name: bg_app_blue
@@ -36,7 +36,7 @@ services:
 
   app-green:
     build:
-      context: .
+      context: ./backend
       dockerfile: Dockerfile
     image: fastapi-devops-app:latest
     container_name: bg_app_green

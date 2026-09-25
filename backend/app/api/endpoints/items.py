@@ -5,20 +5,19 @@ from app.models.item import ItemCreate, ItemUpdate, ItemResponse
 
 router = APIRouter(prefix="/items", tags=["Items"])
 
-# In-memory store for predictable, fast unit testing and zero external dependencies
 _DB: dict[int, dict] = {
     1: {
         "id": 1,
-        "title": "Cloud DevOps Architecture Handbook",
-        "description": "Comprehensive reference guide for CI/CD and Containerization",
-        "price": 49.99,
+        "title": "DevOps Handbook",
+        "description": "Continuous delivery and automated pipelines guide",
+        "price": 39.99,
         "is_active": True,
         "created_at": datetime.now(timezone.utc),
     },
     2: {
         "id": 2,
-        "title": "SonarQube Quality Gate Mastery",
-        "description": "Static code analysis, code smells, and automated pipeline gates",
+        "title": "System Design Guide",
+        "description": "Scalable web applications and microservices architecture",
         "price": 29.50,
         "is_active": True,
         "created_at": datetime.now(timezone.utc),
@@ -32,16 +31,16 @@ def reset_db():
     _DB.clear()
     _DB[1] = {
         "id": 1,
-        "title": "Cloud DevOps Architecture Handbook",
-        "description": "Comprehensive reference guide for CI/CD and Containerization",
-        "price": 49.99,
+        "title": "DevOps Handbook",
+        "description": "Continuous delivery and automated pipelines guide",
+        "price": 39.99,
         "is_active": True,
         "created_at": datetime.now(timezone.utc),
     }
     _DB[2] = {
         "id": 2,
-        "title": "SonarQube Quality Gate Mastery",
-        "description": "Static code analysis, code smells, and automated pipeline gates",
+        "title": "System Design Guide",
+        "description": "Scalable web applications and microservices architecture",
         "price": 29.50,
         "is_active": True,
         "created_at": datetime.now(timezone.utc),
@@ -51,7 +50,7 @@ def reset_db():
 
 @router.get("", response_model=List[ItemResponse], status_code=status.HTTP_200_OK)
 def list_items(
-    search: Optional[str] = Query(None, description="Search by title"),
+    search: Optional[str] = Query(None),
     skip: int = Query(0, ge=0),
     limit: int = Query(10, ge=1, le=100),
 ) -> List[ItemResponse]:
