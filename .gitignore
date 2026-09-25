@@ -36,3 +36,7 @@ htmlcov/
 # OS
 .DS_Store
 Thumbs.db
+
+# Assignment specifications & local links
+requirement.md
+link.md
