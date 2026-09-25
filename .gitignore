@@ -1,0 +1,38 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Testing and coverage
+.cache/
+.pytest_cache/
+.coverage
+coverage.xml
+test-results.xml
+htmlcov/
+
+# SonarQube
+.sonar/
+.scannerwork/
+
+# Environment and secrets
+.env
+.env.local
+
+# IDEs
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

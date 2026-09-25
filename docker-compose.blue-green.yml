@@ -1,0 +1,62 @@
+services:
+  nginx:
+    image: nginx:alpine
+    container_name: bg_nginx_proxy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - app-blue
+    networks:
+      - bg_network
+
+  app-blue:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: fastapi-devops-app:latest
+    container_name: bg_app_blue
+    restart: unless-stopped
+    ports:
+      - "8001:8000"
+    environment:
+      - ENVIRONMENT=production
+      - DEBUG=False
+      - COLOR=blue
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    networks:
+      - bg_network
+
+  app-green:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: fastapi-devops-app:latest
+    container_name: bg_app_green
+    restart: unless-stopped
+    ports:
+      - "8002:8000"
+    environment:
+      - ENVIRONMENT=production
+      - DEBUG=False
+      - COLOR=green
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    networks:
+      - bg_network
+
+networks:
+  bg_network:
+    name: bg_network
+    driver: bridge
