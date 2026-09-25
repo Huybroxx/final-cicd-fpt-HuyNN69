@@ -27,7 +27,7 @@ _CURRENT_ID = 2
 
 
 def reset_db():
-    global _DB, _CURRENT_ID
+    global _CURRENT_ID
     _DB.clear()
     _DB[1] = {
         "id": 1,
@@ -58,7 +58,7 @@ def list_items(
     if search:
         search_lower = search.lower()
         items = [i for i in items if search_lower in i["title"].lower()]
-    return [ItemResponse(**item) for item in items[skip : skip + limit]]
+    return [ItemResponse(**item) for item in items[skip:skip + limit]]
 
 
 @router.post("", response_model=ItemResponse, status_code=status.HTTP_201_CREATED)
@@ -77,14 +77,20 @@ def create_item(payload: ItemCreate) -> ItemResponse:
 @router.get("/{item_id}", response_model=ItemResponse, status_code=status.HTTP_200_OK)
 def get_item(item_id: int) -> ItemResponse:
     if item_id not in _DB:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Item {item_id} not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Item {item_id} not found",
+        )
     return ItemResponse(**_DB[item_id])
 
 
 @router.put("/{item_id}", response_model=ItemResponse, status_code=status.HTTP_200_OK)
 def update_item(item_id: int, payload: ItemUpdate) -> ItemResponse:
     if item_id not in _DB:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Item {item_id} not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Item {item_id} not found",
+        )
     item = _DB[item_id]
     update_data = payload.model_dump(exclude_unset=True)
     item.update(update_data)
@@ -95,5 +101,8 @@ def update_item(item_id: int, payload: ItemUpdate) -> ItemResponse:
 @router.delete("/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_item(item_id: int) -> None:
     if item_id not in _DB:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Item {item_id} not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Item {item_id} not found",
+        )
     del _DB[item_id]

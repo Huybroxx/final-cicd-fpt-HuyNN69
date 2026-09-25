@@ -21,7 +21,7 @@ jobs:
           cache-dependency-path: backend/requirements-dev.txt
       - run: pip install flake8 black
       - run: |
-          flake8 backend/app/ backend/tests/ --max-line-length=100
+          flake8 backend/app/ backend/tests/ --max-line-length=100 --extend-ignore=E203,W503
           black --check backend/app/ backend/tests/ --line-length=100
 
   test:
