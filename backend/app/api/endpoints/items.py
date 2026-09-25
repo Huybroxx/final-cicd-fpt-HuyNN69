@@ -58,7 +58,7 @@ def list_items(
     if search:
         search_lower = search.lower()
         items = [i for i in items if search_lower in i["title"].lower()]
-    return [ItemResponse(**item) for item in items[skip:skip + limit]]
+    return [ItemResponse(**item) for item in items[skip : skip + limit]]
 
 
 @router.post("", response_model=ItemResponse, status_code=status.HTTP_201_CREATED)
